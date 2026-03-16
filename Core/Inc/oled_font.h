@@ -10,4 +10,10 @@
  */
 extern const uint8_t OLED_F8x16[][16];
 
+/*
+ * 16x16 Chinese font for SSD1306-style OLED.
+ * Each character is 32 bytes (16x16 bits).
+ */
+extern const uint8_t OLED_C16x16[][32];
+
 #endif // __OLED_FONT_H

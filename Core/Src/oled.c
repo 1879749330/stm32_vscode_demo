@@ -263,3 +263,54 @@ static uint32_t OLED_Pow(uint32_t x, uint32_t y)
         result *= x;
     return result;
 }
+
+/**
+ * @brief  在指定位置显示一个16x16的中文汉字
+ * @param  line   行号 1~4（每行高16像素，刚好容纳一个中文）
+ * @param  column 列号 1~8（每个中文宽16像素）
+ * @param  index  汉字在字库中的索引
+ * @retval 无
+ */
+void OLED_ShowChineseChar(uint8_t line, uint8_t column, uint8_t index)
+{
+    if (line < 1 || line > 4 || column < 1 || column > 8)
+        return;
+
+    // 汉字16x16，占用2个page行（8+8=16像素高），每像素占1位，共16x16/8=32字节
+    for (uint8_t i = 0; i < 2; i++)  // 上半部分和下半部分
+    {
+        OLED_SetCursor((line - 1) * 2 + i, (column - 1) * 16);
+        for (uint8_t j = 0; j < 16; j++)  // 16个字节（每字节一列）
+        {
+            OLED_WriteData(OLED_C16x16[index][i * 16 + j]);
+        }
+    }
+}
+
+/**
+ * @brief  显示一串中文汉字字符串（每个汉字16x16）
+ * @param  line   行号 1~4
+ * @param  column 起始列号 1~8
+ * @param  str    中文字符串，每个汉字对应字库中预先定义的索引顺序
+ * @note   字库中已包含的汉字（按索引顺序）：
+ *         0:心  1:率  2:血  3:氧  4:温  5:度  6:水  7:位  8:监  9:测
+ *         10:系 11:统 12:正 13:常 14:校 15:准 16:多 17:参 18:数 19:信 20:息
+ * @retval 无
+ */
+void OLED_ShowChinese(uint8_t line, uint8_t column, const char *str)
+{
+    if (line < 1 || line > 4 || column < 1 || column > 8 || str == NULL)
+        return;
+
+    uint8_t col = column;
+    uint8_t idx = 0;
+    // UTF-8中文占3字节，我们每跳过3字节取一个汉字，索引顺序递增
+    // 调用者必须保证字符串中的汉字顺序与字库索引顺序一致
+    while (*str && col <= 8)
+    {
+        OLED_ShowChineseChar(line, col, idx);
+        idx++;
+        str += 3;  // 跳过UTF-8编码的3字节
+        col++;
+    }
+}

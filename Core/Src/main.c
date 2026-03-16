@@ -24,7 +24,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "oled.h"
-#include "button.h"
+#include "key.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -35,7 +35,7 @@ typedef enum
 {
     UI_PAGE_BOOT = 0,    // 开机欢迎界面
     UI_PAGE_MONITOR,     // 环境监测主界面（心率/血氧/温度/水位）
-    UI_PAGE_INFO,        // 系统信息界面（预留扩展）
+    UI_PAGE_INFO,        // 系统信息界面
     UI_PAGE_MAX          // 界面总数，用于循环计数
 } UIPage_t;
 /* USER CODE END PTD */
@@ -83,24 +83,58 @@ static void UI_ShowPage(UIPage_t page)
     {
         case UI_PAGE_BOOT:
             /* 第一个界面：开机欢迎画面 */
-            OLED_ShowString(2, 3, "STM32");
-            OLED_ShowString(3, 1, "监测系统");
+            OLED_ShowString(1, 4, "STM32");
+            // 监(8) 测(9) 系(10) 统(11)
+            OLED_ShowChineseChar(3, 2, 8);
+            OLED_ShowChineseChar(3, 3, 9);
+            OLED_ShowChineseChar(3, 4, 10);
+            OLED_ShowChineseChar(3, 5, 11);
             break;
 
         case UI_PAGE_MONITOR:
-            /* 第二个界面：四行分别显示各项监测参数（预留位置） */
-            OLED_ShowString(1, 1, "心率: ---");
-            OLED_ShowString(2, 1, "血氧: --%");
-            OLED_ShowString(3, 1, "温度: --.-C");
-            OLED_ShowString(4, 1, "水位: 正常");
+            /* 第二个界面：四行分别显示各项监测参数 */
+            // 心(0) 率(1)
+            OLED_ShowChineseChar(1, 1, 0);
+            OLED_ShowChineseChar(1, 2, 1);
+            OLED_ShowString(1, 5, ": ---");
+
+            // 血(2) 氧(3)
+            OLED_ShowChineseChar(2, 1, 2);
+            OLED_ShowChineseChar(2, 2, 3);
+            OLED_ShowString(2, 5, ": --%");
+
+            // 温(4) 度(5)
+            OLED_ShowChineseChar(3, 1, 4);
+            OLED_ShowChineseChar(3, 2, 5);
+            OLED_ShowString(3, 5, ": --.-C");
+
+            // 水(6) 位(7)
+            OLED_ShowChineseChar(4, 1, 6);
+            OLED_ShowChineseChar(4, 2, 7);
+            // 正(12) 常(13)
+            OLED_ShowString(4, 5, ": ");
+            OLED_ShowChineseChar(4, 6, 12);
+            OLED_ShowChineseChar(4, 7, 13);
             break;
 
         case UI_PAGE_INFO:
-            /* 第三个界面：系统信息（预留扩展） */
-            OLED_ShowString(1, 1, "系统信息");
-            OLED_ShowString(2, 1, "STM32F103");
-            OLED_ShowString(3, 1, "OLED Demo");
-            OLED_ShowString(4, 1, "等待传感器");
+            /* 第三个界面：系统信息 */
+            // 系(10) 统(11) 信(19) 息(20)
+            OLED_ShowChineseChar(1, 1, 10);
+            OLED_ShowChineseChar(1, 2, 11);
+            OLED_ShowChineseChar(1, 3, 19);
+            OLED_ShowChineseChar(1, 4, 20);
+            OLED_ShowString(2, 1, "STM32F103C8T6");
+            // 多(16) 参(17) 数(18) 监(8) 测(9)
+            OLED_ShowChineseChar(3, 1, 16);
+            OLED_ShowChineseChar(3, 2, 17);
+            OLED_ShowChineseChar(3, 3, 18);
+            OLED_ShowChineseChar(3, 4, 8);
+            OLED_ShowChineseChar(3, 5, 9);
+            // 校(14) 准(15) 中
+            OLED_ShowChineseChar(4, 1, 14);
+            OLED_ShowChineseChar(4, 2, 15);
+            OLED_ShowString(4, 3, "中...");
             break;
 
         default:
@@ -143,7 +177,7 @@ int main(void)
     MX_I2C1_Init();
     /* USER CODE BEGIN 2 */
     OLED_Init();         // 初始化OLED显示屏
-    Button_Init();       // 初始化按键
+    Key_Init();          // 初始化按键
 
     /* 显示第一个开机界面 */
     UI_ShowPage(current_page);
@@ -156,19 +190,19 @@ int main(void)
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
-        Button_Task();  // 按键状态机处理（需要定期调用）
+        Key_Tick();       // 按键定时扫描（需要10ms调用一次，主循环约10ms间隔也可正常工作）
 
         /* 获取按键事件 */
-        ButtonEvent_t ev = Button_GetEvent();
-        if (ev != BUTTON_EVENT_NONE)
+        KeyEvent_t ev = Key_Scan();
+        if (ev != KEY_EVENT_NONE)
         {
-            if (ev == BUTTON_EVENT_SINGLE_CLICK)
+            if (ev == KEY_EVENT_CLICK)
             {
                 /* 单击切换到下一个界面，循环显示 */
                 current_page = (UIPage_t)((current_page + 1) % UI_PAGE_MAX);
                 UI_ShowPage(current_page);
             }
-            /* 可在此添加双击、长按其他功能 */
+            /* 双击、长按可添加其他功能 */
         }
 
         /* 传感器数据更新代码预留位置
@@ -176,7 +210,7 @@ int main(void)
          * 可在这里周期性读取数据，更新显示
          */
 
-        HAL_Delay(10);  // 10ms调度周期，按键消抖效果较好
+        HAL_Delay(10);  // 10ms扫描间隔，按键消抖效果较好
     }
     /* USER CODE END 3 */
 }

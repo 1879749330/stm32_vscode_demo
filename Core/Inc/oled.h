@@ -57,6 +57,24 @@ void OLED_ShowHexNum(uint8_t line, uint8_t column, uint32_t number, uint8_t leng
  */
 void OLED_ShowBinNum(uint8_t line, uint8_t column, uint32_t number, uint8_t length);
 
+/**
+ * @brief Show a 16x16 Chinese character on the OLED.
+ *
+ * @param line   1..4 (each 16 pixels high)
+ * @param column 1..8 (each 16 pixels wide)
+ * @param index  index of Chinese character in the font table
+ */
+void OLED_ShowChineseChar(uint8_t line, uint8_t column, uint8_t index);
+
+/**
+ * @brief Show a string of Chinese characters (16x16 each).
+ *
+ * @param line   1..4
+ * @param column starting column 1..8
+ * @param str    null-terminated string using Chinese index mapping
+ */
+void OLED_ShowChinese(uint8_t line, uint8_t column, const char *str);
+
 #ifdef __cplusplus
 }
 #endif
